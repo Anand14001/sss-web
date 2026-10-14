@@ -1,0 +1,353 @@
+@import 'tailwindcss';
+
+/* ---------------------------------------------------------------------------
+   Design tokens
+   Navy / gold / ivory taken from the event poster. Category accents mirror the
+   three colour washes behind the poster's category photographs.
+--------------------------------------------------------------------------- */
+@theme {
+  --color-navy: #102e52;
+  --color-navy-deep: #0a1c34;
+  --color-navy-mid: #1a4474;
+  --color-gold: #d6a13a;
+  --color-gold-soft: #e7c27a;
+  --color-gold-dim: #a8781f;
+  --color-ivory: #faf7f1;
+  --color-ivory-deep: #f3ede2;
+  --color-muted: #5f6775;
+
+  /* Fraunces for voice, Manrope for reading. Fallbacks are chosen so a failed
+     webfont shifts the page as little as possible: Georgia is close to Fraunces
+     in width and x-height, and the system UI stack is close to Manrope. */
+  --font-display: 'Fraunces', Georgia, 'Iowan Old Style', 'Times New Roman', serif;
+  --font-sans: 'Manrope', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+
+  /* One radius scale, used everywhere. Mixing arbitrary corner values is what
+     made the first draft read as assembled rather than designed.
+       sm  — inputs, small controls
+       md  — inline panels
+       lg  — surfaces and image masks
+       xl  — large editorial media
+       full— primary actions */
+  --radius-sm: 0.625rem;
+  --radius-md: 1rem;
+  --radius-lg: 1.5rem;
+  --radius-xl: 2.25rem;
+}
+
+@layer base {
+  :root {
+    /* Container widths and the gutter grow in tiers rather than stopping dead
+       at 1240/1440. Past those widths the page used to sit in a fixed band with
+       the full-bleed hero image still running to the viewport edge, which is
+       what made everything look shrunken on a large monitor. */
+    --shell: 1240px;
+    --shell-wide: 1440px;
+    --gutter: 1.5rem;
+    /* Sticky-header clearance. Mirrored by HEADER_OFFSET in utils/scroll.js. */
+    --header-offset: 6rem;
+    color-scheme: light;
+  }
+
+  * {
+    min-width: 0;
+  }
+
+  html {
+    /* No CSS smooth scrolling: Lenis owns scroll animation, and enabling both
+       runs two competing animations on every anchor jump. */
+    scroll-behavior: auto;
+    scroll-padding-top: var(--header-offset);
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    margin: 0;
+    background: var(--color-ivory);
+    color: var(--color-navy-deep);
+    font-family: var(--font-sans);
+    font-size: 1.0625rem;
+    line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  /* Headings default to Fraunces at a text-ish optical size; the display classes
+     below override opsz where the type is actually large. */
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-variation-settings: 'opsz' 72, 'SOFT' 0, 'WONK' 0;
+    line-height: 1.06;
+    letter-spacing: -0.008em;
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-gold);
+    outline-offset: 3px;
+    border-radius: var(--radius-sm);
+  }
+
+  ::selection {
+    background: var(--color-gold);
+    color: var(--color-navy-deep);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Composition
+--------------------------------------------------------------------------- */
+@layer components {
+  .shell {
+    width: 100%;
+    max-width: var(--shell);
+    margin-inline: auto;
+    padding-inline: var(--gutter);
+  }
+
+  .shell-wide {
+    width: 100%;
+    max-width: var(--shell-wide);
+    margin-inline: auto;
+    padding-inline: var(--gutter);
+  }
+
+  /* ------------------------------------------------------------------ display
+     Three display steps, each with its own weight and optical size — not one
+     size scaled three ways. WONK (Fraunces' alternate, hand-cut serif forms) is
+     switched on only at the largest step, where there is room to see it; at
+     smaller sizes it reads as noise. */
+  .display {
+    font-family: var(--font-display);
+    text-transform: uppercase;
+    line-height: 0.95;
+  }
+
+  .display-xl {
+    font-size: clamp(2.875rem, 10vw, 6.75rem);
+    font-weight: 700;
+    font-variation-settings: 'opsz' 144, 'SOFT' 0, 'WONK' 1;
+    letter-spacing: -0.014em;
+  }
+
+  .display-lg {
+    font-size: clamp(2.125rem, 5.2vw, 3.75rem);
+    font-weight: 650;
+    font-variation-settings: 'opsz' 144, 'SOFT' 0, 'WONK' 0;
+    letter-spacing: -0.012em;
+  }
+
+  .display-md {
+    font-size: clamp(1.875rem, 3.9vw, 2.875rem);
+    font-weight: 600;
+    font-variation-settings: 'opsz' 96, 'SOFT' 0, 'WONK' 0;
+    letter-spacing: -0.008em;
+  }
+
+  /* --------------------------------------------------------------- supporting
+     Sentence-case Fraunces, used for the lines that speak rather than label:
+     the hero's second line, pull quotes, category messages. */
+  .display-soft {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-variation-settings: 'opsz' 72, 'SOFT' 0, 'WONK' 0;
+    line-height: 1.12;
+    letter-spacing: -0.012em;
+  }
+
+  /* --------------------------------------------------------------- metadata
+     Dates, venue, fee. Fraunces at a small optical size gives the particulars
+     the look of a printed programme and keeps them out of the body voice. */
+  .meta-value {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-variation-settings: 'opsz' 24, 'SOFT' 0, 'WONK' 0;
+    letter-spacing: -0.004em;
+    font-variant-numeric: lining-nums;
+  }
+
+  /* ------------------------------------------------------------------ labels
+     Restrained tracking: enough to read as a label, not so much that the word
+     comes apart. */
+  .eyebrow {
+    font-family: var(--font-sans);
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.11em;
+  }
+
+  .lede {
+    font-size: clamp(1.0625rem, 1.25vw, 1.1875rem);
+    line-height: 1.75;
+    font-weight: 400;
+  }
+
+  /* Surfaces.
+     A panel is separated from the page by a shift in tone and a soft shadow,
+     not by a 1px box. Borders are reserved for places where an edge genuinely
+     needs to be read — form controls, mainly. */
+  .surface {
+    background: #fff;
+    border-radius: var(--radius-lg);
+    box-shadow:
+      0 1px 2px rgb(16 46 82 / 0.04),
+      0 12px 32px -20px rgb(16 46 82 / 0.22);
+  }
+
+  .surface-sunken {
+    background: var(--color-ivory-deep);
+    border-radius: var(--radius-lg);
+  }
+
+  .surface-navy {
+    background: var(--color-navy);
+    border-radius: var(--radius-lg);
+    color: #fff;
+  }
+
+  /* Hairline divider, used in place of a border on four sides. */
+  .divider {
+    height: 1px;
+    background: color-mix(in srgb, var(--color-navy) 12%, transparent);
+  }
+
+  /* Section grounds. Light sections share one ivory field so the page reads as
+     continuous; the dark bands are the punctuation. */
+  .band-light {
+    background: var(--color-ivory);
+  }
+
+  .band-dark {
+    background: linear-gradient(175deg, var(--color-navy-deep) 0%, #0d2342 55%, var(--color-navy-deep) 100%);
+  }
+
+  /* Prizes layout.
+     Named areas, so one DOM order serves two compositions: on narrow screens
+     the trophy sits beside the heading and stands clear of the prize list,
+     while from lg it returns to a tall column of its own alongside everything.
+     Ordering alone cannot do this — it would drop the trophy below the list. */
+  .prizes-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) clamp(5rem, 34%, 12rem);
+    grid-template-areas:
+      'intro trophy'
+      'rest  rest';
+    column-gap: clamp(0.875rem, 4vw, 2rem);
+    row-gap: clamp(2rem, 6vw, 3rem);
+    align-items: center;
+  }
+
+  .prizes-intro { grid-area: intro; min-width: 0; }
+  .prizes-trophy { grid-area: trophy; min-width: 0; }
+  .prizes-rest { grid-area: rest; min-width: 0; }
+
+  @media (min-width: 1024px) {
+    .prizes-layout {
+      grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+      grid-template-areas:
+        'trophy intro'
+        'trophy rest';
+      column-gap: 4rem;
+      row-gap: 0;
+      align-content: center;
+    }
+
+    /* The trophy spans both rows on wide screens, so it is centred against the
+       whole column rather than against the heading alone. */
+    .prizes-rest { align-self: start; }
+  }
+
+  /* Soft transitions between light and dark, so the page flows rather than
+     stacking as a column of rectangles. */
+  .band-dark-top {
+    border-top-left-radius: clamp(1.5rem, 4vw, 3rem);
+    border-top-right-radius: clamp(1.5rem, 4vw, 3rem);
+  }
+
+  .band-dark-bottom {
+    border-bottom-left-radius: clamp(1.5rem, 4vw, 3rem);
+    border-bottom-right-radius: clamp(1.5rem, 4vw, 3rem);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Motion
+   Reveals only hide once JS confirms it can animate them, so the page stays
+   readable if the bundle or GSAP fails to load.
+--------------------------------------------------------------------------- */
+@layer utilities {
+  html.js-motion [data-reveal] {
+    opacity: 0;
+    will-change: transform, opacity;
+  }
+
+  .no-scroll {
+    overflow: hidden;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.js-motion [data-reveal] {
+    opacity: 1;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Large screens
+   Three tiers. Each widens the containers and the gutter, and steps the display
+   scale up so headings keep their weight against a bigger viewport instead of
+   shrinking into it. Reading measures are untouched — body copy stays inside
+   its max-w-* limits, so only the composition widens, never the line length.
+--------------------------------------------------------------------------- */
+@media (min-width: 1536px) {
+  :root {
+    --shell: 1400px;
+    --shell-wide: 1620px;
+    --gutter: 2.5rem;
+  }
+
+  .display-xl { font-size: 7.75rem; }
+  .display-lg { font-size: 4.25rem; }
+  .display-md { font-size: 3.125rem; }
+  .lede { font-size: 1.25rem; }
+}
+
+@media (min-width: 1920px) {
+  :root {
+    --shell: 1600px;
+    --shell-wide: 1860px;
+    --gutter: 3.5rem;
+  }
+
+  .display-xl { font-size: 8.75rem; }
+  .display-lg { font-size: 4.75rem; }
+  .display-md { font-size: 3.5rem; }
+}
+
+@media (min-width: 2400px) {
+  :root {
+    --shell: 1760px;
+    --shell-wide: 2060px;
+    --gutter: 4rem;
+  }
+}

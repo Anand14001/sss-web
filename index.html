@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en-IN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0A1C34" />
+
+    <title>Salem Star Speaker — The Speaking Contest | 1 November 2026, Salem</title>
+    <meta
+      name="description"
+      content="A public speaking contest in Salem for kids, teens and adults. Sunday, 1 November 2026 at Hotel A Square Rivera. Registration ₹999 per participant, closing 26 October 2026."
+    />
+
+    <!-- Absolute paths: these are relative-resolved against the current URL,
+         so "favicon.png" would 404 on a nested route like /registration/kid. -->
+    <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png" />
+    <link rel="icon" href="/favicon-192.png" sizes="192x192" type="image/png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
+
+    <!-- Open Graph / social sharing. og:url and og:image are intentionally
+         omitted until the live domain is confirmed — see README. -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Salem Star Speaker" />
+    <meta property="og:locale" content="en_IN" />
+    <meta property="og:title" content="Salem Star Speaker — The Speaking Contest" />
+    <meta
+      property="og:description"
+      content="Find your voice. Own the stage. A speaking contest for kids, teens and adults — Sunday, 1 November 2026, Hotel A Square Rivera, Salem."
+    />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Salem Star Speaker — The Speaking Contest" />
+    <meta
+      name="twitter:description"
+      content="Find your voice. Own the stage. Kids, Teens and Adults categories. 1 November 2026, Salem."
+    />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- Two variable families, loaded once each.
+         Fraunces carries the display voice (optical-size, weight and the WONK
+         axis are all used); Manrope carries everything that has to be read.
+         No other families, no static weight files. -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..700;1,9..144,400..600&family=Manrope:wght@400..700&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Structured data limited to facts the organisers have confirmed.
+         No address, no offer URL, no performer list is asserted. -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Event",
+        "name": "Salem Star Speaker — The Speaking Contest",
+        "description": "A public speaking contest for kids (10–13), teens (14–17) and adults (18+), organised by Salem Parenting Club in association with Speak Up Salem Toastmasters Club.",
+        "startDate": "2026-11-01",
+        "eventStatus": "https://schema.org/EventScheduled",
+        "eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode",
+        "location": {
+          "@type": "Place",
+          "name": "Hotel A Square Rivera",
+          "address": {
+            "@type": "PostalAddress",
+            "addressLocality": "Salem",
+            "addressRegion": "Tamil Nadu",
+            "addressCountry": "IN"
+          }
+        },
+        "organizer": [
+          { "@type": "Organization", "name": "Salem Parenting Club" },
+          { "@type": "Organization", "name": "Speak Up Salem Toastmasters Club" }
+        ],
+        "offers": {
+          "@type": "Offer",
+          "price": "999",
+          "priceCurrency": "INR",
+          "availability": "https://schema.org/LimitedAvailability",
+          "validThrough": "2026-10-26"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <noscript>
+      <p style="padding: 2rem; font-family: system-ui, sans-serif">
+        Salem Star Speaker — The Speaking Contest. Sunday, 1 November 2026 at Hotel A
+        Square Rivera, Salem. Registration ₹999 per participant, closing 26 October 2026.
+        Registration is organised by phone: please call Vivek on 86107 11306 or
+        Tharu on 7010713565. This site needs JavaScript to browse.
+      </p>
+    </noscript>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
