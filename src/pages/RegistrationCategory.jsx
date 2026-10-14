@@ -111,11 +111,12 @@ export default function RegistrationCategory() {
             <div className="surface p-5 sm:p-7">
               <p className="eyebrow flex items-center gap-2 text-gold-dim">
                 <ShieldCheck size={15} aria-hidden="true" />
-                Privacy
+                Security & Privacy
               </p>
               <p className="mt-4 font-sans text-sm leading-relaxed text-muted">
-                Nothing you type here leaves your browser. This website has no database,
-                sends your answers to no server, and runs no analytics or tracking.
+                Your details are securely submitted over 256-bit SSL encryption.
+                Payments are processed directly via Razorpay’s PCI-DSS compliant gateway.
+                No card numbers or bank credentials are ever stored on our servers.
               </p>
               {category.max < 18 && (
                 <p className="mt-3 font-sans text-sm leading-relaxed text-muted">

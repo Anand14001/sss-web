@@ -241,14 +241,14 @@ export const faqs = [
   },
   {
     q: 'What happens after submitting the form?',
-    a: 'The form checks that your details are complete and that your age category matches your date of birth. It does not submit them: online registration is not connected on this website yet, so nothing is sent, stored or paid. Call the organisers to confirm your place and arrange the fee.',
+    a: 'Your registration details are securely validated and a Razorpay payment window opens to complete the entry fee. Once payment is verified, you will immediately receive your unique registration reference on-screen and a confirmation email to your registered address.',
   },
 ]
 
 export const seo = {
   title: 'Salem Star Speaker — The Speaking Contest | 1 November 2026, Salem',
   description:
-    'A public speaking contest in Salem for kids, teens and adults. Sunday, 1 November 2026 at Hotel A Square Rivera. Registration ₹999 per participant, closing 26 October 2026.',
+    'A public speaking contest in Salem for kids, teens and adults. Sunday, 1 November 2026 at Hotel A Square Rivera. Registration fees from ₹99 to ₹299 per participant, closing 26 October 2026.',
   // Set this to the real domain before deploying; it is only used for canonical/OG tags.
   url: '',
 }
