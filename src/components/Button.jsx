@@ -23,6 +23,12 @@ const base =
   'select-none active:scale-[0.985] disabled:pointer-events-none disabled:opacity-60'
 
 const sizes = {
+  // `sm` is the compact pill the sticky header needs on a phone, where the mark
+  // and the menu toggle have first claim on the bar. It is a size of its own
+  // rather than a `className` override on `md`, because two values of the same
+  // utility on one element are resolved by stylesheet order, not by which was
+  // written last — `min-h-12` would win over `min-h-11` at every width.
+  sm: 'min-h-11 px-4 text-[0.8125rem]',
   md: 'min-h-12 px-7 text-[0.9375rem]',
   lg: 'min-h-14 px-9 text-base',
 }

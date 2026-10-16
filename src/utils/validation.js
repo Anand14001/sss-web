@@ -131,20 +131,24 @@ export function validateRegistration(values, category) {
       errors.dob = 'Date of birth cannot be in the future.'
     } else {
       age = ageOnContestDate(dob)
-      if (age < categories[0].min) {
-        errors.dob = `The participant would be ${age} on ${event.date.display}. The contest is open from age ${categories[0].min}.`
+      if (!category && age < categories[0].min) {
+        errors.dob = `You must be at least ${categories[0].min} years old to participate.`
       }
     }
   }
 
   // 4 — Age Category. Fixed by the route, so the only thing to check is that
-  // the date of birth actually belongs to it. The message names the page the
-  // participant should be on instead.
+  // the date of birth actually belongs to it.
   if (category && age !== null && !errors.dob && (age < category.min || age > category.max)) {
-    const correct = categoryForAge(age)
-    errors.dob = correct
-      ? `That date of birth makes the participant ${age} on ${event.date.display}, which is ${correct.formLabel} — not ${category.formLabel}. Choose another category to register under ${correct.name}.`
-      : `That date of birth makes the participant ${age} on ${event.date.display}, which falls outside ${category.formLabel}.`
+    if (category.slug === 'kid' || category.id === 'kids') {
+      errors.dob = 'You must be 10–13 years old to participate.'
+    } else if (category.slug === 'teen' || category.id === 'teens') {
+      errors.dob = 'You must be 14–17 years old to participate.'
+    } else if (category.slug === 'adult' || category.id === 'adults' || category.min >= 18) {
+      errors.dob = 'You must be at least 18 years old to participate.'
+    } else {
+      errors.dob = `You must be ${category.min}–${category.max} years old to participate.`
+    }
   }
 
   // 6 — Occupation.
@@ -161,4 +165,23 @@ export function validateRegistration(values, category) {
   }
 
   return errors
+}
+
+/**
+ * Validates candidate coupon code string before sending API preview.
+ */
+export function validateCouponCode(code) {
+  if (!code || typeof code !== 'string') return 'Please enter a coupon code.'
+  const trimmed = code.trim().toUpperCase()
+  const cleaned = trimmed.replace(/[\s-_]/g, '')
+  if (cleaned.length < 2 || cleaned.length > 32) {
+    return 'Coupon code must be between 2 and 32 characters.'
+  }
+  if (!/^[A-Z0-9]+$/.test(cleaned)) {
+    return 'Coupon codes contain only letters and numbers.'
+  }
+  if (/^SSS-\d{4}-[A-Z0-9]+$/.test(trimmed)) {
+    return 'That looks like a booking reference, not a coupon code.'
+  }
+  return null
 }

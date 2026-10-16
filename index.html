@@ -8,13 +8,18 @@
     <title>Salem Star Speaker — The Speaking Contest | 1 November 2026, Salem</title>
     <meta
       name="description"
-      content="A public speaking contest in Salem for kids, teens and adults. Sunday, 1 November 2026 at Hotel A Square Rivera. Registration ₹999 per participant, closing 26 October 2026."
+      content="A public speaking contest in Salem for kids, teens and adults. Sunday, 1 November 2026 at Hotel A Square Rivera. Entry from ₹99 by age category, closing 26 October 2026."
     />
 
     <!-- Absolute paths: these are relative-resolved against the current URL,
          so "favicon.png" would 404 on a nested route like /registration/kid. -->
+    <!-- Transparent background, so the mark sits on the browser's own tab
+         colour in either theme instead of carrying a navy tile around. -->
+    <link rel="icon" href="/favicon-16.png" sizes="16x16" type="image/png" />
     <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png" />
     <link rel="icon" href="/favicon-192.png" sizes="192x192" type="image/png" />
+    <!-- iOS discards alpha and composites the home-screen icon onto black, so
+         this one keeps its navy plate on purpose. -->
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
 
     <!-- Open Graph / social sharing. og:url and og:image are intentionally
@@ -70,13 +75,35 @@
           { "@type": "Organization", "name": "Salem Parenting Club" },
           { "@type": "Organization", "name": "Speak Up Salem Toastmasters Club" }
         ],
-        "offers": {
-          "@type": "Offer",
-          "price": "999",
-          "priceCurrency": "INR",
-          "availability": "https://schema.org/LimitedAvailability",
-          "validThrough": "2026-10-26"
-        }
+        "offers": [
+          {
+            "@type": "Offer",
+            "name": "Juniors (10–13)",
+            "price": "99",
+            "priceCurrency": "INR",
+            "availability": "https://schema.org/LimitedAvailability",
+            "validThrough": "2026-10-26",
+            "url": "https://salemstarspeaker.com/registration/kid"
+          },
+          {
+            "@type": "Offer",
+            "name": "Teens (14–17)",
+            "price": "199",
+            "priceCurrency": "INR",
+            "availability": "https://schema.org/LimitedAvailability",
+            "validThrough": "2026-10-26",
+            "url": "https://salemstarspeaker.com/registration/teen"
+          },
+          {
+            "@type": "Offer",
+            "name": "Adults (18+)",
+            "price": "299",
+            "priceCurrency": "INR",
+            "availability": "https://schema.org/LimitedAvailability",
+            "validThrough": "2026-10-26",
+            "url": "https://salemstarspeaker.com/registration/adult"
+          }
+        ]
       }
     </script>
   </head>
@@ -85,9 +112,10 @@
     <noscript>
       <p style="padding: 2rem; font-family: system-ui, sans-serif">
         Salem Star Speaker — The Speaking Contest. Sunday, 1 November 2026 at Hotel A
-        Square Rivera, Salem. Registration ₹999 per participant, closing 26 October 2026.
-        Registration is organised by phone: please call Vivek on 86107 11306 or
-        Tharu on 7010713565. This site needs JavaScript to browse.
+        Square Rivera, Salem. Entry ₹99 for Juniors (10–13), ₹199 for Teens (14–17) and
+        ₹299 for Adults (18+), closing 26 October 2026. Online registration needs
+        JavaScript; to register without it, please call Vivek on 86107 11306 or Tharu on
+        7010713565.
       </p>
     </noscript>
     <script type="module" src="/src/main.jsx"></script>

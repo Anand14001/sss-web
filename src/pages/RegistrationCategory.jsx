@@ -27,7 +27,7 @@ export default function RegistrationCategory() {
     <div className="min-h-screen bg-ivory">
       {/* Masthead. Deliberately simpler than the landing page's sticky header:
           this is a task page, and the only way out should be obvious. */}
-      <header className="band-dark band-dark-bottom text-white">
+      <header className="sticky top-0 z-40 band-dark band-dark-bottom text-white">
         <div className="shell flex items-center justify-between gap-4 py-5">
           <Link to="/" className="flex min-h-11 shrink-0 items-center" aria-label={`${event.name} — home`}>
             <img

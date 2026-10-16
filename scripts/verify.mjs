@@ -326,7 +326,7 @@ check(
   /valid phone/i.test(await form.$eval('#phone-error', (el) => el.textContent).catch(() => '')),
 )
 const dobErr = await form.$eval('#dob-error', (el) => el.textContent).catch(() => '')
-check('date of birth must match the route category', /Junior \(10-13 years\)/.test(dobErr), dobErr)
+check('date of birth must match the route category', dobErr === 'You must be 14–17 years old to participate.', dobErr)
 check(
   'values preserved when validation fails',
   (await form.$eval('#fullName', (el) => el.value)) === REAL_NAME &&
@@ -341,7 +341,7 @@ await setValue('#dob', '01/11/2008') // turns 18 that day -> Adults
 await submit()
 check(
   'turning 18 on the contest date is rejected on the Teens form',
-  /Adults \(18\+\)/.test(await form.$eval('#dob-error', (el) => el.textContent).catch(() => '')),
+  (await form.$eval('#dob-error', (el) => el.textContent).catch(() => '')) === 'You must be 14–17 years old to participate.',
 )
 
 // A complete, valid entry.

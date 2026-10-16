@@ -123,7 +123,7 @@ sss-web/
 
 Edit [`src/data/event.js`](./src/data/event.js) and nothing else. The fee, date,
 venue, deadline, contacts, categories, benefits and FAQs all read from there, so
-the ₹999 fee cannot drift between sections.
+the fees cannot drift between sections.
 
 Three places outside that file repeat event facts for reasons that cannot be
 avoided, and must be updated by hand if the details change:
@@ -153,9 +153,9 @@ node scripts/verify.mjs
 ```
 
 `verify.mjs` covers section presence, image loading, fee consistency, category
-preselection, every validation rule, the WhatsApp handoff, the absence of false
-success wording, the FAQ accordion, heading structure, form labelling, the mobile
-menu, tap-target sizes, anchor navigation, reduced motion and the `<noscript>`
+preselection, every validation rule, the absence of WhatsApp wording and links,
+the FAQ accordion, heading structure, form labelling, the mobile menu,
+tap-target sizes, anchor navigation, reduced motion and the `<noscript>`
 fallback.
 
 Screenshots: `node scripts/shoot.mjs <dir>` (320 / 390 / 768 / 1440, with
@@ -166,20 +166,24 @@ horizontal-overflow and console-error reporting) and
 
 ## Known limitations
 
-**There is no backend, and the form cannot submit.** Each category form
-carries the seven official fields and full client-side validation, but there is
-no endpoint to post to. Pressing **Complete Registration** validates the entry
-and then says plainly that online registration is not connected, that nothing
-has been sent, saved or paid, and that the organisers must be called to take a
-place. Nothing in this build may claim otherwise.
+**Registration is live.** Each category form carries the seven official fields
+and full client-side validation, then posts to `sss-api`, which creates a
+Razorpay order, verifies the payment signature and confirms the entry. See
+section 8 of [`PROJECT-NOTES.md`](./PROJECT-NOTES.md) for the flow and the
+exact validation rules.
 
-**Fees are per category and contradict the poster.** Kids ₹99, Teens ₹199,
-Adults ₹299 — set in `src/data/event.js`. The event poster says ₹999 for all
-three. The per-category prices were specified later and now apply site-wide;
-the organisers need to confirm which is correct before launch.
+Gaps worth knowing about: there is no way to recover a registration after the
+tab closes (no status-by-reference route), no capacity or sold-out handling
+behind the "limited entries" copy, and the registration page cannot reach the
+policy pages.
 
-**No payment collection.** The ₹999 fee is displayed and explained; it is not
-charged. Real paid registration needs a backend and a verified payment gateway.
+**Fees are per category.** Juniors ₹99, Teens ₹199, Adults ₹299 — set in
+`src/data/event.js`. The ₹999 flat fee on the original poster was an
+early-development figure and is confirmed incorrect.
+
+**Payment is collected** on the registration pages through Razorpay, against
+orders created by `sss-api`. The server sets the amount from its own config; the
+client never sends a price.
 
 **No analytics or tracking**, and therefore no cookie banner.
 

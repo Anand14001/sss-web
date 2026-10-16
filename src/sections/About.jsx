@@ -7,8 +7,16 @@ export default function About() {
     <section id="about" aria-labelledby="about-title" className="band-light py-20 sm:py-24 lg:py-28 2xl:py-36">
       <div className="shell grid gap-12 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] lg:gap-24">
         {/* Asymmetric media column, deliberately offset from the text baseline. */}
-        <div className="relative pb-10 lg:pt-10 lg:pb-16">
+        <div className="relative pb-12 sm:pb-10 lg:pt-10 lg:pb-16">
           <figure className="relative m-0">
+            {/* Portrait on a phone, landscape from `sm`. The landscape crop was
+                half of the problem below: its height is a fraction of the
+                content width, so as the screen narrowed the photograph shrank
+                while the card — sized by its own text, which only grew as it
+                rewrapped — did not. By 320 the card stood taller than the
+                picture it is meant to break out of. A 4:5 frame is also close
+                to the asset's native 1098×1448, so `cover` no longer has to
+                throw away the top of the speaker's head. */}
             <img
               src="images/story-teen.jpg"
               alt="A teenage speaker mid-sentence, holding a microphone"
@@ -16,7 +24,7 @@ export default function About() {
               height="768"
               loading="lazy"
               decoding="async"
-              className="aspect-[4/3] w-full rounded-[var(--radius-xl)] object-cover lg:aspect-[4/5]"
+              className="aspect-[4/5] w-full rounded-[var(--radius-xl)] object-cover object-[50%_18%] sm:aspect-[4/3] sm:object-center lg:aspect-[4/5]"
               data-reveal
             />
             {/* Navy block breaking out of the photograph's bottom-right corner.
@@ -26,9 +34,9 @@ export default function About() {
                 appear and open a gap to grow into. */}
             <figcaption
               data-reveal
-              className="surface-navy absolute right-0 -bottom-8 z-10 w-[min(21rem,85%)] p-6 shadow-[0_18px_44px_-24px_rgba(10,28,52,0.75)] sm:p-8 lg:-right-[14%] lg:-bottom-11 lg:w-[min(21rem,72%)]"
+              className="surface-navy absolute right-0 -bottom-10 z-10 w-[min(21rem,85%)] p-6 shadow-[0_18px_44px_-24px_rgba(10,28,52,0.75)] max-[359px]:p-5 sm:-bottom-8 sm:p-8 lg:-right-[14%] lg:-bottom-11 lg:w-[min(21rem,72%)]"
             >
-              <p className="display-soft text-[1.75rem] sm:text-[2rem]">
+              <p className="display-soft text-[1.75rem] max-[359px]:text-[1.5rem] sm:text-[2rem]">
                 “{event.promise}”
               </p>
               <p className="mt-3 font-sans text-sm text-white/65">

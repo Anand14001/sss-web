@@ -11,9 +11,15 @@
 
 # ------------------------------------------------- single-page fallback
 # REQUIRED. The app has client-side routes (/registration, /registration/kid,
-# /registration/teen, /registration/adult) that exist only in JavaScript. A
-# direct hit or a refresh on one of those URLs asks Apache for a file that is
-# not on disk, so without this rule the visitor gets a 404.
+# /registration/teen, /registration/adult and /registration/status/SSS-2026-XXXXXX)
+# that exist only in JavaScript. A direct hit or a refresh on one of those URLs
+# asks Apache for a file that is not on disk, so without this rule the visitor
+# gets a 404.
+#
+# The rule is depth-agnostic, so the three-segment status URL is covered. That
+# one matters most: it is the link a visitor bookmarks or returns to after
+# losing the payment tab, so it is almost always a direct hit, never a
+# navigation from inside the app.
 #
 # Real files and directories are served first, which is what keeps the policy
 # pages (/privacy-policy.html and friends) and everything under /assets working.

@@ -1,18 +1,30 @@
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { BrowserRouter, Navigate, Route, Routes, useParams } from 'react-router-dom'
 import SmoothScroll from './components/SmoothScroll'
 import Landing from './pages/Landing'
 import CategoryChooser from './pages/CategoryChooser'
 import RegistrationCategory from './pages/RegistrationCategory'
+import Booking from './pages/Booking'
 
 /**
- * Routes.
+ * Redirects legacy /registration/status/:reference URLs to the canonical
+ * /booking/:reference route while preserving the reference parameter.
+ */
+function LegacyStatusRedirect() {
+  const { reference } = useParams()
+  return <Navigate to={`/booking/${reference}`} replace />
+}
+
+/**
+ * Application Routes.
  *
- * /registration renders the landing page with the category chooser over it, so
- * the modal has the site behind it rather than a blank backdrop — and so the
- * back button returns to exactly where the visitor was.
+ * /registration renders the category chooser over the landing page so the modal
+ * retains context and the back action returns to the previous scroll position.
  *
- * Anything unrecognised goes home rather than showing a dead end. Direct hits
- * on nested URLs rely on the SPA fallback in public/.htaccess.
+ * /registration/:slug serves the category registration form (kids, teens, adults).
+ *
+ * /booking/:reference is the dedicated canonical booking & payment status page.
+ *
+ * Any legacy /registration/status/:reference links seamlessly redirect to /booking/:reference.
  */
 export default function App() {
   return (
@@ -29,7 +41,16 @@ export default function App() {
             </>
           }
         />
+        {/* Canonical booking & payment status route */}
+        <Route path="/booking/:reference" element={<Booking />} />
+
+        {/* Legacy status route redirect */}
+        <Route path="/registration/status/:reference" element={<LegacyStatusRedirect />} />
+
+        {/* Category registration forms */}
         <Route path="/registration/:slug" element={<RegistrationCategory />} />
+
+        {/* Catch-all redirect to home */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

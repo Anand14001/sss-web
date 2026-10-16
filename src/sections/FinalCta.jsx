@@ -46,12 +46,9 @@ export default function FinalCta() {
           ))}
         </dl>
 
-        <div className="mt-11 flex flex-wrap justify-center gap-3" data-reveal>
+        <div className="mt-11 flex justify-center" data-reveal>
           <Button route="/registration" size="lg">
             Register Now
-          </Button>
-          <Button href={`tel:${event.contacts[0].tel}`} size="lg" variant="ghost">
-            Call {event.contacts[0].name} · {event.contacts[0].phone}
           </Button>
         </div>
       </div>

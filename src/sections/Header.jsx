@@ -133,7 +133,15 @@ export default function Header() {
           </nav>
 
           <div className="flex items-center gap-2">
-            <Button route="/registration" size="md" className="px-5 sm:px-7">
+            {/* Compact below `sm`, the header's `md` pill from there up. At 320
+                the mark, the pill and the toggle together asked for more than
+                the bar had, and flex took the difference out of the toggle —
+                which is why it rendered 30px wide instead of 44. */}
+            <Button
+              route="/registration"
+              size="sm"
+              className="sm:min-h-12 sm:px-7 sm:text-[0.9375rem]"
+            >
               <span className="sm:hidden">Register</span>
               <span className="hidden sm:inline">Register Now</span>
             </Button>
@@ -145,7 +153,7 @@ export default function Header() {
               aria-expanded={open}
               aria-controls="mobile-nav"
               aria-label={open ? 'Close menu' : 'Open menu'}
-              className="grid size-11 place-items-center rounded-full text-white transition-colors duration-300 hover:bg-white/10 lg:hidden"
+              className="grid size-11 shrink-0 place-items-center rounded-full text-white transition-colors duration-300 hover:bg-white/10 lg:hidden"
             >
               {open ? <X size={24} aria-hidden="true" /> : <Menu size={24} aria-hidden="true" />}
             </button>

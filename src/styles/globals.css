@@ -351,3 +351,37 @@
     --gutter: 4rem;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Print styling
+   Ensures the official participant pass & booking receipt prints crisp,
+   clean, and without headers, action buttons, or browser artefacts.
+--------------------------------------------------------------------------- */
+@media print {
+  header,
+  footer,
+  nav,
+  .no-print,
+  button:not(.allow-print) {
+    display: none !important;
+  }
+
+  body,
+  main {
+    background: #ffffff !important;
+    color: #102e52 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .print-receipt-card {
+    box-shadow: none !important;
+    border: 2px solid #102e52 !important;
+    border-radius: 12px !important;
+    padding: 24px !important;
+    margin: 0 auto !important;
+    max-width: 100% !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+}

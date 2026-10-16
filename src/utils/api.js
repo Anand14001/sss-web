@@ -54,6 +54,21 @@ export const api = {
   retryPayment: (reference) =>
     request(`/registrations/${encodeURIComponent(reference)}/retry-payment`, {
       method: 'POST'
+    }),
+  validateCoupon: (payload, signal) =>
+    request('/coupons/validate', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+      signal
+    }),
+  applyCoupon: (reference, payload) =>
+    request(`/registrations/${encodeURIComponent(reference)}/apply-coupon`, {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    }),
+  removeCoupon: (reference) =>
+    request(`/registrations/${encodeURIComponent(reference)}/remove-coupon`, {
+      method: 'POST'
     })
 };
 

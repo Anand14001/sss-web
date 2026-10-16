@@ -3,7 +3,7 @@
  *
  * Nothing in here may be duplicated or re-typed inside a component — if a number,
  * date or phone number appears on screen, it is read from this file. That keeps the
- * ₹999 fee (and the deadline, venue and contacts) correct in one edit.
+ * fees (and the deadline, venue and contacts) correct in one edit.
  *
  * Only verified, organiser-supplied information belongs here. Do not add prize
  * values, schedules, judges, rules or a street address until the organisers confirm
@@ -13,14 +13,14 @@
 /**
  * Registration fees, per category.
  *
- * These replaced a single ₹999 fee that applied to everyone. They are the only
- * place a price is written down — every fee shown anywhere on the site, in the
- * category panels, the selection modal and the registration pages, reads from
- * the category objects below.
+ * These replaced a single flat fee used during early development. They are the
+ * only place a price is written down on the client — every fee shown anywhere on
+ * the site, in the category panels, the selection modal and the registration
+ * pages, reads from the category objects below.
  *
- * NOTE FOR THE ORGANISERS: the event poster states ₹999 for all three
- * categories. These per-category prices came from a later instruction and now
- * take precedence site-wide. Confirm which is correct before launch.
+ * The amount actually charged comes from the server (CATEGORIES[].feePaise in
+ * sss-api), which never trusts a price sent by the browser. Keep the two in
+ * step: if they drift, the site advertises one price and charges another.
  */
 
 export const event = {
@@ -168,6 +168,13 @@ export const categoryBySlug = Object.fromEntries(categories.map((c) => [c.slug, 
 
 /** "₹99" — the one place a fee is formatted. */
 export const formatFee = (amount) => `₹${amount}`
+
+/** Formats a coupon's discount label for display */
+export const formatDiscount = (coupon) => {
+  if (!coupon) return ''
+  if (coupon.discountValue === 100 || coupon.isFree) return '100% OFF (Complimentary Free Entry)'
+  return `${coupon.discountValue}% OFF`
+}
 
 /** "₹99 – ₹299", for copy that speaks about registration without a category. */
 export const feeRange = `${formatFee(Math.min(...categories.map((c) => c.fee)))} – ${formatFee(

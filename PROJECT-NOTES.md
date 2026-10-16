@@ -4,19 +4,25 @@ Working reference for this build. Keep this updated instead of relying on chat h
 
 ---
 
-## 1. Workspace rules (non-negotiable)
+## 1. Workspace layout
 
 ```
 salem speaking contest/
 └── website/
-    ├── sss-web/     ← ALL frontend work happens here
-    ├── sss-api/     ← MUST stay empty (future backend)
-    └── sss-admin/   ← MUST stay empty (future admin dashboard)
+    ├── sss-web/     ← public site (this file documents it)
+    ├── sss-api/     ← Express + Prisma backend, Razorpay, email
+    └── sss-admin/   ← operations dashboard (React SPA)
 ```
 
-- No files in `sss-api/` or `sss-admin/` during this phase.
 - No app files in the `website/` root.
-- Frontend is **static only** — must run on Apache/cPanel with no Node.js on the server.
+- `sss-web` and `sss-admin` build to static bundles and run on Apache/cPanel.
+  `sss-api` is a Node service and needs a Node host — the two are deployed
+  separately and talk over `VITE_API_BASE_URL`.
+
+> **Earlier phase, now superseded.** This file originally recorded that
+> `sss-api/` and `sss-admin/` "MUST stay empty" and that the frontend was
+> static-only with no server. Both backend and dashboard were built afterwards.
+> Anything below that assumes there is no server is historical.
 
 ---
 
@@ -31,7 +37,7 @@ These live in code at `src/data/event.js`. Never hardcode them anywhere else.
 | Date | Sunday, 1 November 2026 |
 | Venue | Hotel A Square Rivera |
 | Registration deadline | 26 October 2026 |
-| Fee | ₹999 per participant — **same for every category** |
+| Fee | ₹99 Juniors · ₹199 Teens · ₹299 Adults — **per category** |
 | Contacts | Vivek 86107 11306 · Tharu 7010713565 |
 | Prizes | Top 3 winners in each category |
 | Prelims | May be conducted depending on participant numbers |
@@ -191,21 +197,52 @@ pixel-accurate, never redrawn:
 
 ---
 
-## 8. Registration form — honesty constraints
+## 8. Registration form — what it actually does
 
-There is **no backend in this phase**. Therefore:
+The form takes real registrations and real money. Superseded: it no longer
+opens a WhatsApp enquiry, and it may now state that a registration was saved —
+because it is.
 
-- The form is a complete, validated UI only.
-- It must never claim a registration was saved or a payment was taken.
-- Submission opens a **prefilled WhatsApp enquiry** to the organiser, labelled
-  clearly as an *enquiry*, not a confirmed registration.
-- The ₹999 fee renders from `event.js` → `registration.fee` in every place it appears.
+**The flow**, in `src/components/RegistrationForm.jsx`:
 
-**Validation rules implemented:**
-required fields · age 10–99 · age must match the selected category band ·
-Indian mobile `[6-9]\d{9}` after stripping spaces/`+91` · email only if provided ·
-under-18 participants require guardian name + guardian phone ·
-errors announced with `aria-invalid` + `role="alert"` and focus moves to the first error.
+1. `validateRegistration(values, category)` checks the fields client-side.
+2. `POST /registrations` creates the registration (`AWAITING_PAYMENT`) and a
+   Razorpay order. The server sets the amount; the client never sends a price.
+3. Razorpay Checkout opens with that order.
+4. `POST /payments/verify` checks the signature server-side and flips the
+   registration to `PAID`.
+5. If verify errors, the form polls `GET /registrations/:reference/status` in
+   case the Razorpay webhook confirmed it instead.
+6. A failed or abandoned payment offers a retry against the same reference via
+   `POST /registrations/:reference/retry-payment`.
+
+Fees render from `event.js` → `categories[].fee`, but the charged amount comes
+from the server — see *Pricing* in section 18.
+
+**Validation rules actually implemented** (`src/utils/validation.js`):
+
+| Field | Rule |
+| --- | --- |
+| Full name | Required, at least 2 characters. Deliberately permissive — real names carry apostrophes, hyphens and initials. |
+| Email | **Required**, `^[^\s@]+@[^\s@]+\.[a-z]{2,}$`. |
+| Phone | Required. Indian mobile `[6-9]\d{9}` after stripping spaces, brackets and a `+91`/`91`/`0` prefix, or any 8–15 digit international number. |
+| Date of birth | Required, must be a real date (`2026-02-30` is rejected, not rolled forward) and not in the future. |
+| Age | Completed years **on the contest date**, counting whole birthdays — not a year subtraction. Must fall inside the band of the category in the URL. |
+| Occupation | Required, must be one of the listed options. |
+| City | Required. |
+| Guardian name / phone | **Optional**, shown only for under-18 categories. Not validated. |
+
+The category is fixed by the route, not a field — see *Category is fixed by the
+URL* in section 18.
+
+Errors are announced with `aria-invalid` + `role="alert"` and tied to the
+control via `aria-describedby` (`src/components/Field.jsx`); focus moves to the
+first field in `FIELD_ORDER` that failed.
+
+> **Known gap.** The success, failure and busy states swap the whole form out
+> with no focus move and no `aria-live`, so the transitions themselves are not
+> announced. The field-level errors above are handled; the state changes are
+> not.
 
 ---
 
@@ -225,13 +262,27 @@ Deploy: upload the **contents** of `dist/` into the cPanel document root, keep
 
 ---
 
-## 10. Handoff to the future backend
+## 10. Backend integration — status
 
-When `sss-api/` is built, these are the integration points:
-1. `src/sections/Registration.jsx` — replace the WhatsApp handoff with a `POST`.
-2. `src/data/event.js` — fee and deadline should come from the API, not the bundle.
-3. Payment gateway, receipt/confirmation UI, and a seat-availability check are all
-   out of scope here and must not be simulated.
+`sss-api/` was built. Of the three integration points this section originally
+listed:
+
+1. ~~Replace the WhatsApp handoff with a `POST`~~ — **done.** `src/utils/api.js`
+   wraps the five public endpoints; `RegistrationForm.jsx` drives them.
+2. **Fee and deadline should come from the API, not the bundle** — **still
+   open.** `src/data/event.js` remains the client's copy. `GET /api/v1/event`
+   exists and `api.getEventConfig()` is already written, but nothing calls it.
+   Until it does, the advertised price and the charged price are two separate
+   facts that happen to agree.
+3. Payment gateway and confirmation UI — **done** (Razorpay + the confirmed /
+   failed states in `RegistrationForm.jsx`). **Seat availability is still not
+   built**: "limited entries" appears in the copy and the FAQ, but no capacity
+   is recorded or enforced anywhere in the stack.
+
+Also open: there is no way to recover a registration once the tab is closed.
+The reference lives only in component state — no `/registration/status/:ref`
+route, nothing persisted — so a visitor whose browser dies mid-payment depends
+entirely on the confirmation email.
 
 ---
 
@@ -251,7 +302,7 @@ The build is held to agency standards, not "it works". Standing requirements:
   mobile → change the code → re-inspect. At least two meaningful visual passes after
   the first draft. No claimed testing that was not run.
 - **Quality gates:** distinct identity · event understood in seconds · three
-  categories instantly legible · ₹999 visible and consistent · date/venue/deadline
+  categories instantly legible · fees visible and consistent · date/venue/deadline
   easy to find · obvious registration path · balanced type · consistent spacing ·
   correct crops · mobile designed, not shrunk · accessible · build passes.
 
@@ -396,13 +447,29 @@ styled to match the page. Replacements live in `src/components/`:
 They are not part of the React bundle and need no router — Apache serves them
 directly, and the `.htaccess` fallback only fires for paths that do not exist.
 
-**Outstanding, and flagged on the pages themselves:**
+All three were written for a brochure site and were **rewritten once payments
+went live**. They had said the site collects "Nothing", has "no payment gateway
+and no checkout", and that registration is handled by phone — all false once
+Razorpay was wired in. They now describe the real flow: what is stored, that
+Razorpay processes the payment, and that card details never reach our servers.
+
+**Outstanding:**
 - The detailed **contest rules** (topics, time limits, judging, conduct,
   disqualification) have not been supplied. Terms & Conditions says so rather
   than inventing them.
 - The **refund terms** have not been set. The Refund Policy says so and tells
-  visitors to agree terms with the organisers before paying. Do not replace
-  that notice with invented terms — it is a commercial commitment.
+  visitors to confirm the position with the organisers before paying. Do not
+  replace that notice with invented terms — it is a commercial commitment.
+  This is now a **Razorpay merchant-compliance gap**, not just a blank: a
+  published refund/cancellation policy is required of a live merchant.
+- **The policy pages are unreachable from the registration page.** They are
+  linked only from the landing-page footer, and `/registration/:slug` has its
+  own masthead and no footer — so the one screen where someone is about to pay
+  is the one screen that cannot reach the terms.
+- **No consent checkbox.** It was removed on the organisers' instruction when
+  the form was a UI-only mock (see section 13). Money is now being taken, so
+  acceptance of the terms, and parent/guardian consent for minors, need a real
+  answer.
 
 ## 16. Large-screen layout
 
@@ -470,12 +537,19 @@ client-side routes:
 Unknown category slugs redirect to `/registration`; any other unknown path
 redirects to `/`.
 
-### Pricing — needs an organiser decision
-The poster says **₹999 for all three categories**. A later instruction set
-**₹99 / ₹199 / ₹299 per category**, and those now apply site-wide: the category
-panels, event details, hero strip, final CTA and FAQ all read from
-`categories[].fee` in `src/data/event.js`. Leaving ₹999 anywhere would have made
-the site contradict its own checkout. **Confirm which is right before launch.**
+### Pricing — settled
+**₹99 Juniors / ₹199 Teens / ₹299 Adults** is correct and is what the checkout
+charges. The ₹999 flat fee on the original poster was an early-development
+figure and is **not** the price — every trace of it has been removed from the
+site, the metadata and the policy pages.
+
+These read from `categories[].fee` in `src/data/event.js` (category panels,
+event details, hero strip, final CTA, FAQ, registration form) and from
+`CATEGORIES[].feePaise` in `sss-api/src/config/event.js` (the amount actually
+charged). **Those are two separate copies of the same fact.** The server is
+authoritative — it never trusts an amount from the client — but if the two
+drift, the site will advertise a price it does not charge. The API already
+exposes `/api/v1/event` for exactly this; the web app does not yet call it.
 
 ### Category is fixed by the URL
 `validateRegistration(values, category)` takes the category from the route, not
@@ -548,3 +622,13 @@ at 32, 192 and 180 (apple-touch). Total 68 KB. The source SVG is kept out of
 
 **Icon hrefs are absolute.** `href="favicon.svg"` resolved against the current
 URL, so it 404'd on every nested route such as `/registration/kid`.
+
+## 22. Coupons & Discounts Module
+
+- **Disclosure & Input:** Collapsed "Have a coupon code?" disclosure in `RegistrationForm.jsx` expands to reveal an auto-capitalizing monospace code input with client-side format checks and an authoritative preview via `POST /coupons/validate`.
+- **Live 3-Line Breakdown:** Successful coupon preview displays a green confirmation chip with discount details and a 3-line live breakdown: Standard fee, Coupon discount, and Total payable.
+- **Category Synchronization:** If the participant changes category while a coupon is applied, an automatic re-validation checks if the coupon is eligible for the new category. If ineligible, the coupon is cleared and the participant is informed.
+- **Strict Money Correctness:** The frontend never calculates or submits final amounts. Only `couponCode` is sent in the registration creation payload. The backend authoritatively quotes, prices, and reserves the slot.
+- **100% Complimentary Flow:** If a 100% coupon is applied (`payableAmountPaise === 0`), Razorpay checkout is bypassed entirely (`order: null, freeRegistration: true`). The user is immediately redirected to `/booking/:reference` which renders the verified `ConfirmedPanel` directly.
+- **Pending Booking Coupon Management:** On unpaid bookings (`/booking/:reference` in `AWAITING_PAYMENT`), participants can apply or remove a coupon code dynamically before launching checkout.
+- **Repricing on Retry:** If an operator pauses or modifies a coupon while a participant has an open booking, retrying payment handles `repriced: true` with a clear notice before opening Razorpay checkout.
