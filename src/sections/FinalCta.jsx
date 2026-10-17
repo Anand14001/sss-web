@@ -1,13 +1,15 @@
-import { event, feeRange } from '../data/event'
+import { event } from '../data/event'
+import { useCategories } from '../context/CategoriesContext'
 import Button from '../components/Button'
 
-const stats = [
-  { label: 'Contest date', value: event.date.display },
-  { label: 'Registration fee', value: `${feeRange} by category` },
-  { label: 'Last day to register', value: event.registration.deadlineDisplay },
-]
-
 export default function FinalCta() {
+  const { feeRange } = useCategories()
+
+  const stats = [
+    { label: 'Contest date', value: event.date.display },
+    { label: 'Registration fee', value: `${feeRange} by category` },
+    { label: 'Last day to register', value: event.registration.deadlineDisplay },
+  ]
   return (
     <section
       aria-labelledby="final-cta-title"

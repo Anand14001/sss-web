@@ -1,9 +1,12 @@
 import { BrowserRouter, Navigate, Route, Routes, useParams } from 'react-router-dom'
+import { CategoriesProvider } from './context/CategoriesContext'
 import SmoothScroll from './components/SmoothScroll'
 import Landing from './pages/Landing'
 import CategoryChooser from './pages/CategoryChooser'
 import RegistrationCategory from './pages/RegistrationCategory'
 import Booking from './pages/Booking'
+import ApplicationConfirmation from './pages/ApplicationConfirmation'
+import ParticipantPayment from './pages/ParticipantPayment'
 
 /**
  * Redirects legacy /registration/status/:reference URLs to the canonical
@@ -16,21 +19,13 @@ function LegacyStatusRedirect() {
 
 /**
  * Application Routes.
- *
- * /registration renders the category chooser over the landing page so the modal
- * retains context and the back action returns to the previous scroll position.
- *
- * /registration/:slug serves the category registration form (kids, teens, adults).
- *
- * /booking/:reference is the dedicated canonical booking & payment status page.
- *
- * Any legacy /registration/status/:reference links seamlessly redirect to /booking/:reference.
  */
 export default function App() {
   return (
     <BrowserRouter>
-      <SmoothScroll />
-      <Routes>
+      <CategoriesProvider>
+        <SmoothScroll />
+        <Routes>
         <Route path="/" element={<Landing />} />
         <Route
           path="/registration"
@@ -41,6 +36,13 @@ export default function App() {
             </>
           }
         />
+        {/* Dedicated Application Confirmation */}
+        <Route path="/application/confirmation/:reference" element={<ApplicationConfirmation />} />
+        <Route path="/application/:reference" element={<ApplicationConfirmation />} />
+
+        {/* Participant Payment Page via Secure Invitation Token */}
+        <Route path="/pay/:token" element={<ParticipantPayment />} />
+
         {/* Canonical booking & payment status route */}
         <Route path="/booking/:reference" element={<Booking />} />
 
@@ -53,6 +55,8 @@ export default function App() {
         {/* Catch-all redirect to home */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      </CategoriesProvider>
     </BrowserRouter>
   )
 }
+

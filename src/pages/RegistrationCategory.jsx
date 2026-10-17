@@ -1,7 +1,8 @@
 import { useEffect } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
 import { ArrowLeft, CalendarDays, MapPin, PhoneCall, ShieldCheck } from 'lucide-react'
-import { categoryBySlug, event, formatFee } from '../data/event'
+import { event } from '../data/event'
+import { useCategories, useCategory } from '../context/CategoriesContext'
 import RegistrationForm from '../components/RegistrationForm'
 
 /**
@@ -12,7 +13,8 @@ import RegistrationForm from '../components/RegistrationForm'
  */
 export default function RegistrationCategory() {
   const { slug } = useParams()
-  const category = categoryBySlug[slug]
+  const { formatFee } = useCategories()
+  const category = useCategory(slug)
 
   useEffect(() => {
     if (category) document.title = `${category.routeTitle} — ${event.name}`

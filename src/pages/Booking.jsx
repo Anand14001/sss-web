@@ -22,9 +22,11 @@ import {
 } from 'lucide-react'
 import { api } from '../utils/api'
 import { openCheckout } from '../utils/checkout'
-import { categoryBySlug, event, formatFee } from '../data/event'
+import { event, formatFee } from '../data/event'
+import { useCategories } from '../context/CategoriesContext'
 import { clearPendingRegistration, savePendingRegistration } from '../utils/pendingRegistration'
 import { validateCouponCode } from '../utils/validation'
+import WhatsAppGroupCTA from '../components/WhatsAppGroupCTA'
 
 /**
  * Formats ISO date/time into a human-readable timestamp, e.g. "15 Oct 2026, 02:30 PM".
@@ -57,6 +59,7 @@ function formatTimestamp(isoString) {
 export default function Booking() {
   const { reference } = useParams()
   const location = useLocation()
+  const { categoryBySlug } = useCategories()
 
   // Track whether auto-opened checkout has executed to avoid re-triggering on rerenders
   const hasAutoOpened = useRef(false)
@@ -158,7 +161,13 @@ export default function Booking() {
    * Synchronize document title with verified booking state.
    */
   useEffect(() => {
-    if (state.phase === 'ready' && state.data?.status === 'PAID') {
+    const isPaid =
+      state.data?.status === 'PAID' ||
+      state.data?.status === 'CONFIRMED' ||
+      Boolean(state.data?.isConfirmed) ||
+      state.data?.paymentStatus === 'CAPTURED'
+
+    if (state.phase === 'ready' && isPaid) {
       document.title = `Registration Confirmed: ${reference} — ${event.name}`
     } else if (isValidReference) {
       document.title = `Booking ${reference} — ${event.name}`
@@ -169,7 +178,14 @@ export default function Booking() {
     return () => {
       document.title = `${event.name} — ${event.tagline} | 1 November 2026, Salem`
     }
-  }, [reference, state.phase, state.data?.status, isValidReference])
+  }, [
+    reference,
+    state.phase,
+    state.data?.status,
+    state.data?.isConfirmed,
+    state.data?.paymentStatus,
+    isValidReference,
+  ])
 
   /**
    * Synchronize pending registration storage in localStorage.
@@ -177,7 +193,13 @@ export default function Booking() {
   useEffect(() => {
     if (state.phase !== 'ready' || !state.data) return
 
-    if (state.data.status === 'PAID') {
+    const isPaid =
+      state.data.status === 'PAID' ||
+      state.data.status === 'CONFIRMED' ||
+      Boolean(state.data.isConfirmed) ||
+      state.data.paymentStatus === 'CAPTURED'
+
+    if (isPaid) {
       clearPendingRegistration()
     } else if (state.data.status === 'AWAITING_PAYMENT') {
       savePendingRegistration({
@@ -225,8 +247,10 @@ export default function Booking() {
               data: {
                 ...prev.data,
                 ...registration,
-                status: 'PAID',
-                paymentId: paymentId || registration.paymentId,
+                status: registration?.status || 'CONFIRMED',
+                isConfirmed: true,
+                paymentStatus: 'CAPTURED',
+                paymentId: paymentId || registration?.paymentId,
               },
               forRef: reference,
             }))
@@ -300,7 +324,13 @@ export default function Booking() {
     if (state.phase !== 'ready' || !state.data) return
 
     // If registration is already paid, do not open checkout
-    if (state.data.status === 'PAID') {
+    const isAlreadyPaid =
+      state.data.status === 'PAID' ||
+      state.data.status === 'CONFIRMED' ||
+      Boolean(state.data.isConfirmed) ||
+      state.data.paymentStatus === 'CAPTURED'
+
+    if (isAlreadyPaid) {
       hasAutoOpened.current = true
       return
     }
@@ -321,7 +351,11 @@ export default function Booking() {
   }, [state.phase, state.data, location.state, launchCheckout])
 
   const category = state.data ? categoryBySlug[state.data.category] : null
-  const isPaid = state.data?.status === 'PAID'
+  const isPaid =
+    state.data?.status === 'PAID' ||
+    state.data?.status === 'CONFIRMED' ||
+    Boolean(state.data?.isConfirmed) ||
+    state.data?.paymentStatus === 'CAPTURED'
   const isCancelled = state.data?.status === 'CANCELLED'
   const isVerifying = busy === 'verifying'
 
@@ -621,6 +655,14 @@ function ConfirmedPanel({ registration, category, reference, copied, onCopy }) {
             </div>
           </div>
         </div>
+
+        {/* Official WhatsApp Group CTA (Stage E) */}
+        <WhatsAppGroupCTA
+          className="mx-auto max-w-lg mb-7 no-print"
+          title="Booking Confirmed!"
+          description="Your payment has been successfully verified. Join our official WhatsApp group to stay informed about contest announcements, updates, and participant instructions."
+          buttonText="Join WhatsApp Group"
+        />
 
         {/* Action Buttons */}
         <div className="no-print flex flex-wrap items-center justify-center gap-4">

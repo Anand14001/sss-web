@@ -4,12 +4,14 @@
  */
 
 export const API_BASE_URL =
-  (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '') || '/api/v1';
+  ((typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE_URL) ||
+    (typeof process !== 'undefined' && process.env?.VITE_API_BASE_URL) ||
+    '').replace(/\/$/, '') || '/api/v1';
 
 async function request(path, options = {}) {
   const url = `${API_BASE_URL}${path.startsWith('/') ? path : `/${path}`}`;
   const headers = {
-    'Content-Type': 'application/json',
+    ...(options.body ? { 'Content-Type': 'application/json' } : {}),
     ...(options.headers || {})
   };
 
@@ -38,11 +40,22 @@ async function request(path, options = {}) {
 
 export const api = {
   getHealth: () => request('/health'),
-  getEventConfig: () => request('/event'),
+  getEventConfig: () => request(`/event?_t=${Date.now()}`),
+  createApplication: (payload) =>
+    request('/applications', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    }),
   createRegistration: (payload) =>
     request('/registrations', {
       method: 'POST',
       body: JSON.stringify(payload)
+    }),
+  getInvitation: (token) =>
+    request(`/invitations/${encodeURIComponent(token)}`),
+  createInvitationOrder: (token) =>
+    request(`/invitations/${encodeURIComponent(token)}/checkout`, {
+      method: 'POST'
     }),
   verifyPayment: (payload) =>
     request('/payments/verify', {
@@ -69,6 +82,15 @@ export const api = {
   removeCoupon: (reference) =>
     request(`/registrations/${encodeURIComponent(reference)}/remove-coupon`, {
       method: 'POST'
+    }),
+  applyInvitationCoupon: (token, couponCode) =>
+    request(`/invitations/${encodeURIComponent(token)}/apply-coupon`, {
+      method: 'POST',
+      body: JSON.stringify({ couponCode })
+    }),
+  removeInvitationCoupon: (token) =>
+    request(`/invitations/${encodeURIComponent(token)}/coupon`, {
+      method: 'DELETE'
     })
 };
 

@@ -35,7 +35,15 @@ async function pollUntilPaid(reference, { attempts = 10, intervalMs = 3000 } = {
     await new Promise((resolve) => setTimeout(resolve, intervalMs))
     try {
       const res = await api.getRegistrationStatus(reference)
-      if (res.registration?.status === 'PAID') return res.registration
+      const reg = res.registration
+      if (
+        reg?.status === 'PAID' ||
+        reg?.status === 'CONFIRMED' ||
+        Boolean(reg?.isConfirmed) ||
+        reg?.paymentStatus === 'CAPTURED'
+      ) {
+        return reg
+      }
     } catch {
       // A transient failure mid-poll is not an answer. Keep asking.
     }

@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { ArrowRight } from 'lucide-react'
-import { categories, event, formatFee } from '../data/event'
+import { event } from '../data/event'
+import { useCategories } from '../context/CategoriesContext'
 import SectionIntro from '../components/SectionIntro'
 
 /**
@@ -17,6 +18,7 @@ import SectionIntro from '../components/SectionIntro'
  * running number — enough to tell three panels apart without three layouts.
  */
 export default function Categories() {
+  const { categories, formatFee } = useCategories()
   return (
     <section id="categories" aria-labelledby="categories-title" className="band-light py-20 sm:py-24 lg:py-28 2xl:py-36">
       <div className="shell">

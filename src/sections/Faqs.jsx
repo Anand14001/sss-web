@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Plus, Minus } from 'lucide-react'
 import { faqs, event } from '../data/event'
+import { useCategories } from '../context/CategoriesContext'
 import SectionIntro from '../components/SectionIntro'
 
 /**
@@ -10,6 +11,17 @@ import SectionIntro from '../components/SectionIntro'
  */
 export default function Faqs() {
   const [open, setOpen] = useState(0)
+  const { categories, formatFee } = useCategories()
+
+  const dynamicFaqs = faqs.map((item) => {
+    if (item.q.toLowerCase().includes('fee')) {
+      return {
+        ...item,
+        a: `The fee depends on the age category: ${categories.map((c) => `${c.name} ${formatFee(c.fee)}`).join(', ')}, per participant.`
+      }
+    }
+    return item
+  })
 
   return (
     <section id="faqs" aria-labelledby="faqs-title" className="band-light py-20 sm:py-24 lg:py-28 2xl:py-36">
@@ -44,7 +56,7 @@ export default function Faqs() {
         </div>
 
         <dl className="m-0 space-y-2">
-          {faqs.map((item, i) => {
+          {dynamicFaqs.map((item, i) => {
             const isOpen = open === i
             const panelId = `faq-panel-${i}`
             const buttonId = `faq-button-${i}`

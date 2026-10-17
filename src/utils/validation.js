@@ -1,10 +1,20 @@
-import { categories, occupations, event } from '../data/event'
+import { categories, occupations, guardianRelationships, event } from '../data/event.js'
 
 /**
- * The seven official registration fields, in the order the organisers' form
- * lists them. Focus moves to the first field in this order that has an error.
+ * The registration fields, in the order focus moves to the first field that has an error.
  */
-export const FIELD_ORDER = ['fullName', 'email', 'phone', 'dob', 'occupation', 'city']
+export const FIELD_ORDER = [
+  'fullName',
+  'email',
+  'phone',
+  'dob',
+  'occupation',
+  'city',
+  'guardianName',
+  'guardianRelationship',
+  'guardianPhone',
+  'guardianEmail',
+]
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i
 /** Indian mobile: 10 digits starting 6–9, once any +91 / 91 / 0 prefix is gone. */
@@ -162,6 +172,38 @@ export function validateRegistration(values, category) {
   const city = values.city?.trim() ?? ''
   if (!city) {
     errors.city = 'Please enter a city or town.'
+  }
+
+  // Parent / Guardian Details — mandatory for Junior and Teen (minors)
+  const isMinor = category && (category.max < 18 || category.slug === 'kid' || category.slug === 'teen')
+  if (isMinor) {
+    const guardianName = values.guardianName?.trim() ?? ''
+    if (!guardianName) {
+      errors.guardianName = "Please enter the parent/guardian's full name."
+    } else if (guardianName.length < 2) {
+      errors.guardianName = "Please enter the parent/guardian's full name."
+    }
+
+    const guardianRelationship = values.guardianRelationship?.trim() ?? ''
+    if (!guardianRelationship) {
+      errors.guardianRelationship = 'Please select your relationship to the participant.'
+    } else if (!guardianRelationships.includes(guardianRelationship)) {
+      errors.guardianRelationship = 'Please select your relationship to the participant.'
+    }
+
+    const guardianPhone = values.guardianPhone?.trim() ?? ''
+    if (!guardianPhone) {
+      errors.guardianPhone = 'Please enter a valid parent/guardian contact number.'
+    } else if (!isValidPhone(guardianPhone)) {
+      errors.guardianPhone = 'Please enter a valid parent/guardian contact number.'
+    }
+
+    const guardianEmail = values.guardianEmail?.trim() ?? ''
+    if (!guardianEmail) {
+      errors.guardianEmail = 'Please enter a valid parent/guardian email address.'
+    } else if (!EMAIL.test(guardianEmail)) {
+      errors.guardianEmail = 'Please enter a valid parent/guardian email address.'
+    }
   }
 
   return errors

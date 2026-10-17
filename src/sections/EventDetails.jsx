@@ -1,41 +1,43 @@
 import { CalendarDays, MapPin, CalendarX2, IndianRupee, Layers, Phone } from 'lucide-react'
-import { categories, event, formatFee } from '../data/event'
+import { event } from '../data/event'
+import { useCategories } from '../context/CategoriesContext'
 import SectionIntro from '../components/SectionIntro'
 
-const rows = [
-  {
-    Icon: CalendarDays,
-    label: 'Date',
-    value: event.date.display,
-    note: 'Reporting time is shared with registered participants.',
-  },
-  {
-    Icon: MapPin,
-    label: 'Venue',
-    value: event.venue.name,
-    note: `${event.venue.city}. ${event.venue.note}`,
-  },
-  {
-    Icon: CalendarX2,
-    label: 'Last day to register',
-    value: event.registration.deadlineDisplay,
-    note: `${event.registration.availability} — registration may close sooner.`,
-  },
-  {
-    Icon: IndianRupee,
-    label: 'Registration fee',
-    value: categories.map((c) => `${c.name} ${formatFee(c.fee)}`).join(' · '),
-    note: 'Per participant. Each age category has its own fee.',
-  },
-  {
-    Icon: Layers,
-    label: 'Preliminary rounds',
-    value: 'May be conducted',
-    note: event.prelims,
-  },
-]
-
 export default function EventDetails() {
+  const { categories, formatFee } = useCategories()
+
+  const rows = [
+    {
+      Icon: CalendarDays,
+      label: 'Date',
+      value: event.date.display,
+      note: 'Reporting time is shared with registered participants.',
+    },
+    {
+      Icon: MapPin,
+      label: 'Venue',
+      value: event.venue.name,
+      note: `${event.venue.city}. ${event.venue.note}`,
+    },
+    {
+      Icon: CalendarX2,
+      label: 'Last day to register',
+      value: event.registration.deadlineDisplay,
+      note: `${event.registration.availability} — registration may close sooner.`,
+    },
+    {
+      Icon: IndianRupee,
+      label: 'Registration fee',
+      value: categories.map((c) => `${c.name} ${formatFee(c.fee)}`).join(' · '),
+      note: 'Per participant. Each age category has its own fee.',
+    },
+    {
+      Icon: Layers,
+      label: 'Preliminary rounds',
+      value: 'May be conducted',
+      note: event.prelims,
+    },
+  ]
   return (
     <section
       id="details"

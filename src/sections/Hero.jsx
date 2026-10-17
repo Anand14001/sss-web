@@ -1,16 +1,10 @@
 import { useRef } from 'react'
 import { ArrowDown } from 'lucide-react'
-import { event, feeRange } from '../data/event'
+import { event } from '../data/event'
+import { useCategories } from '../context/CategoriesContext'
 import { useHeroIntro } from '../hooks/useReveal'
 import Button from '../components/Button'
 import OrganiserLogos from '../components/OrganiserLogos'
-
-const facts = [
-  { label: 'Date', value: event.date.display },
-  { label: 'Venue', value: event.venue.name },
-  { label: 'Entry', value: `${feeRange} by category` },
-  { label: 'Closes', value: event.registration.deadlineDisplay },
-]
 
 /**
  * Hero.
@@ -30,6 +24,14 @@ const facts = [
 export default function Hero() {
   const scope = useRef(null)
   useHeroIntro(scope)
+  const { feeRange } = useCategories()
+
+  const facts = [
+    { label: 'Date', value: event.date.display },
+    { label: 'Venue', value: event.venue.name },
+    { label: 'Entry', value: `${feeRange} by category` },
+    { label: 'Closes', value: event.registration.deadlineDisplay },
+  ]
 
   return (
     <section

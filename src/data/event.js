@@ -23,10 +23,14 @@
  * step: if they drift, the site advertises one price and charges another.
  */
 
+export const WHATSAPP_GROUP_INVITE_URL =
+  'https://chat.whatsapp.com/Jbsi0DQ7xFRDyi5ylydf15?s=sw&p=a&mlu=4&ilr=4'
+
 export const event = {
   name: 'Salem Star Speaker',
   tagline: 'The Speaking Contest',
   promise: 'Speak. Express. Inspire.',
+  whatsappGroupInviteUrl: WHATSAPP_GROUP_INVITE_URL,
   summary:
     'A platform to find your voice, build confidence, express yourself and make an impact.',
 
@@ -102,7 +106,7 @@ export const categories = [
     slug: 'kid',
     routeTitle: 'Kids Registration',
     ageRange: '10–13 years',
-    fee: 99,
+    fee: 250,
     message: 'Little voices. Big dreams.',
     blurb:
       'A first stage, a first microphone and a room that listens. Kids learn to stand tall, speak up and enjoy being heard.',
@@ -121,7 +125,7 @@ export const categories = [
     slug: 'teen',
     routeTitle: 'Teens Registration',
     ageRange: '14–17 years',
-    fee: 199,
+    fee: 250,
     message: 'Speak today. Lead tomorrow.',
     blurb:
       'The years when a voice takes shape. Teens practise structuring an idea, holding a room and saying what they actually mean.',
@@ -140,7 +144,7 @@ export const categories = [
     slug: 'adult',
     routeTitle: 'Adults Registration',
     ageRange: '18+ years',
-    fee: 299,
+    fee: 250,
     message: 'Better communication. Greater opportunities.',
     blurb:
       'Work, family, community — every one of them turns on how clearly you speak. Adults sharpen that in front of a real audience.',
@@ -163,10 +167,18 @@ export const occupations = [
   'Others',
 ]
 
+export const guardianRelationships = [
+  'Mother',
+  'Father',
+  'Legal Guardian',
+  'Other',
+]
+
+
 export const categoryById = Object.fromEntries(categories.map((c) => [c.id, c]))
 export const categoryBySlug = Object.fromEntries(categories.map((c) => [c.slug, c]))
 
-/** "₹99" — the one place a fee is formatted. */
+/** "₹250" — the one place a fee is formatted. */
 export const formatFee = (amount) => `₹${amount}`
 
 /** Formats a coupon's discount label for display */
@@ -176,10 +188,13 @@ export const formatDiscount = (coupon) => {
   return `${coupon.discountValue}% OFF`
 }
 
-/** "₹99 – ₹299", for copy that speaks about registration without a category. */
-export const feeRange = `${formatFee(Math.min(...categories.map((c) => c.fee)))} – ${formatFee(
-  Math.max(...categories.map((c) => c.fee)),
-)}`
+/** Formatted fee range, for copy that speaks about registration without a category. */
+export const feeRange =
+  Math.min(...categories.map((c) => c.fee)) === Math.max(...categories.map((c) => c.fee))
+    ? formatFee(Math.min(...categories.map((c) => c.fee)))
+    : `${formatFee(Math.min(...categories.map((c) => c.fee)))} – ${formatFee(
+        Math.max(...categories.map((c) => c.fee)),
+      )}`
 
 export const navLinks = [
   { id: 'home', label: 'Home' },
@@ -255,7 +270,7 @@ export const faqs = [
 export const seo = {
   title: 'Salem Star Speaker — The Speaking Contest | 1 November 2026, Salem',
   description:
-    'A public speaking contest in Salem for kids, teens and adults. Sunday, 1 November 2026 at Hotel A Square Rivera. Registration fees from ₹99 to ₹299 per participant, closing 26 October 2026.',
+    'A public speaking contest in Salem for kids, teens and adults. Sunday, 1 November 2026 at Hotel A Square Rivera. Registration fee ₹250 per participant, closing 26 October 2026.',
   // Set this to the real domain before deploying; it is only used for canonical/OG tags.
   url: '',
 }

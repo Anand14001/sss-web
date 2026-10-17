@@ -1,24 +1,15 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import {
   AlertCircle,
-  Check,
-  ChevronDown,
-  ChevronUp,
   Loader2,
   Lock,
-  ShieldCheck,
   Sparkles,
-  TicketPercent,
-  X
 } from 'lucide-react'
-import { occupations, formatFee } from '../data/event'
-import { validateRegistration, validateCouponCode, FIELD_ORDER } from '../utils/validation'
+import { occupations, guardianRelationships, formatFee } from '../data/event'
+import { validateRegistration, FIELD_ORDER } from '../utils/validation'
 import { api } from '../utils/api'
-import {
-  readPendingRegistration,
-  savePendingRegistration,
-} from '../utils/pendingRegistration'
+import { clearPendingRegistration } from '../utils/pendingRegistration'
 import Field from './Field'
 import Select from './Select'
 import DateField from './DateField'
@@ -31,7 +22,9 @@ const EMPTY = {
   occupation: '',
   city: '',
   guardianName: '',
+  guardianRelationship: '',
   guardianPhone: '',
+  guardianEmail: '',
 }
 
 const todayIso = () => new Date().toISOString().slice(0, 10)
@@ -54,112 +47,13 @@ export default function RegistrationForm({ category }) {
   const [serverError, setServerError] = useState(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  // Coupon state
-  const [couponOpen, setCouponOpen] = useState(false)
-  const [couponInput, setCouponInput] = useState('')
-  const [couponLoading, setCouponLoading] = useState(false)
-  const [couponError, setCouponError] = useState(null)
-  const [appliedCoupon, setAppliedCoupon] = useState(null)
-
-  // An entry created on a previous visit that was never paid for.
-  const [resumable] = useState(() => readPendingRegistration())
+  // Clear any legacy unfinished registration banner state
+  useEffect(() => {
+    clearPendingRegistration()
+  }, [])
 
   const formRef = useRef(null)
-  const prevCategorySlugRef = useRef(category.slug)
-
-  // Re-validate coupon when category changes
-  useEffect(() => {
-    if (prevCategorySlugRef.current === category.slug) return
-    prevCategorySlugRef.current = category.slug
-
-    if (!appliedCoupon) return
-    let active = true
-
-    ;(async () => {
-      try {
-        const res = await api.validateCoupon({
-          code: appliedCoupon.code,
-          category: category.slug,
-          categorySlug: category.slug,
-          email: values.email?.trim() || undefined
-        })
-        if (!active) return
-        if (res.valid) {
-          const couponMeta = res.coupon || {}
-          const quoteMeta = res.quote || {}
-          setAppliedCoupon({
-            ...couponMeta,
-            ...quoteMeta,
-            code: couponMeta.displayCode || couponMeta.code || quoteMeta.code || appliedCoupon.code,
-            discountValue: couponMeta.discountValue ?? quoteMeta.discountValue ?? appliedCoupon.discountValue,
-            discountType: couponMeta.discountType || quoteMeta.discountType || appliedCoupon.discountType || 'PERCENTAGE',
-            isFree: Boolean(res.isFree || couponMeta.isFree || quoteMeta.isFree || quoteMeta.payableAmountPaise === 0)
-          })
-          setCouponError(null)
-        } else {
-          setAppliedCoupon(null)
-          setCouponError(
-            `Coupon ${appliedCoupon.code} is not valid for ${category.name} (${res.error || res.message || 'category mismatch'}).`
-          )
-        }
-      } catch {
-        if (!active) return
-        setAppliedCoupon(null)
-        setCouponError('Could not verify coupon for new category.')
-      }
-    })()
-
-    return () => {
-      active = false
-    }
-  }, [category.slug, category.name, appliedCoupon, values.email])
-
-  async function handleApplyCoupon(e) {
-    e?.preventDefault()
-    setCouponError(null)
-    const err = validateCouponCode(couponInput)
-    if (err) {
-      setCouponError(err)
-      return
-    }
-
-    setCouponLoading(true)
-    try {
-      const res = await api.validateCoupon({
-        code: couponInput.trim(),
-        category: category.slug,
-        categorySlug: category.slug,
-        email: values.email?.trim() || undefined
-      })
-      if (res.valid) {
-        const couponMeta = res.coupon || {}
-        const quoteMeta = res.quote || {}
-        setAppliedCoupon({
-          ...couponMeta,
-          ...quoteMeta,
-          code: couponMeta.displayCode || couponMeta.code || quoteMeta.code || couponInput.trim().toUpperCase(),
-          discountValue: couponMeta.discountValue ?? quoteMeta.discountValue,
-          discountType: couponMeta.discountType || quoteMeta.discountType || 'PERCENTAGE',
-          isFree: Boolean(res.isFree || couponMeta.isFree || quoteMeta.isFree || quoteMeta.payableAmountPaise === 0)
-        })
-        setCouponError(null)
-      } else {
-        setAppliedCoupon(null)
-        setCouponError(res.error || res.message || 'Invalid or ineligible coupon code')
-      }
-    } catch (err) {
-      setAppliedCoupon(null)
-      setCouponError(err.message || 'Failed to check coupon code')
-    } finally {
-      setCouponLoading(false)
-    }
-  }
-
-  function handleRemoveCoupon() {
-    setAppliedCoupon(null)
-    setCouponInput('')
-    setCouponError(null)
-  }
+  const formIdempotencyRef = useRef(null)
 
   const setValue = (name) => (value) => {
     setValues((v) => ({ ...v, [name]: value }))
@@ -188,7 +82,9 @@ export default function RegistrationForm({ category }) {
       phone: values.phone.trim(),
       city: values.city.trim(),
       guardianName: values.guardianName.trim(),
+      guardianRelationship: values.guardianRelationship.trim(),
       guardianPhone: values.guardianPhone.trim(),
+      guardianEmail: values.guardianEmail.trim(),
     }
     setValues(trimmed)
 
@@ -206,7 +102,14 @@ export default function RegistrationForm({ category }) {
     setIsSubmitting(true)
 
     try {
-      // 2. Submit to backend API
+      // 2. Submit to backend API as an application without upfront payment
+      if (!formIdempotencyRef.current) {
+        formIdempotencyRef.current =
+          typeof crypto !== 'undefined' && crypto.randomUUID
+            ? crypto.randomUUID()
+            : `web_${Date.now()}_${Math.random()}`
+      }
+
       const payload = {
         fullName: trimmed.fullName,
         email: trimmed.email,
@@ -216,27 +119,22 @@ export default function RegistrationForm({ category }) {
         occupation: trimmed.occupation,
         city: trimmed.city,
         guardianName: trimmed.guardianName || undefined,
+        guardianRelationship: trimmed.guardianRelationship || undefined,
         guardianPhone: trimmed.guardianPhone || undefined,
-        couponCode: appliedCoupon ? appliedCoupon.code : undefined,
+        guardianEmail: trimmed.guardianEmail || undefined,
+        idempotencyKey: formIdempotencyRef.current,
       }
 
-      const res = await api.createRegistration(payload)
+      const res = await api.createApplication(payload)
 
-      // 3. Persist pending registration reference so an abandoned or closed tab can be resumed
-      if (!res.freeRegistration) {
-        savePendingRegistration({
-          reference: res.registration.reference,
-          categorySlug: category.slug,
-          fullName: res.registration.fullName,
-        })
-      }
+      // Reset idempotency ref so a subsequent registration can be submitted
+      formIdempotencyRef.current = null
 
-      // 4. Immediately redirect to dedicated booking page
-      navigate(`/booking/${res.registration.reference}`, {
+      // 3. Immediately redirect to dedicated application confirmation page
+      const appRef = res.application?.reference || res.registration?.reference
+      navigate(`/application/confirmation/${appRef}`, {
         state: {
-          autoOpenCheckout: !res.freeRegistration && Boolean(res.order),
-          order: res.order,
-          freeRegistration: Boolean(res.freeRegistration),
+          application: res.application || res.registration,
         },
       })
     } catch (err) {
@@ -255,26 +153,6 @@ export default function RegistrationForm({ category }) {
 
   return (
     <form ref={formRef} onSubmit={handleSubmit} noValidate className="surface p-5 sm:p-8 lg:p-10 relative">
-      {/* Prompt for unfinished registration from a prior session */}
-      {resumable && (
-        <div className="mb-6 flex flex-wrap items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-900">
-          <AlertCircle size={20} className="mt-0.5 shrink-0 text-amber-600" aria-hidden="true" />
-          <div className="min-w-0 flex-1 font-sans text-sm">
-            <p className="font-bold">You have an unfinished registration</p>
-            <p className="mt-1 text-amber-900/90">
-              {resumable.fullName ? `${resumable.fullName} — ` : ''}
-              reference <strong className="font-mono">{resumable.reference}</strong> was created but
-              payment was not completed.
-            </p>
-            <Link
-              to={`/booking/${resumable.reference}`}
-              className="mt-2 inline-flex min-h-9 items-center gap-1.5 font-semibold text-navy underline underline-offset-2 hover:text-gold-dim"
-            >
-              Finish paying for it &rarr;
-            </Link>
-          </div>
-        </div>
-      )}
 
       {serverError && (
         <div
@@ -400,31 +278,90 @@ export default function RegistrationForm({ category }) {
           {/* Guardian Info for Minors */}
           {category.max < 18 && (
             <>
-              <div className="sm:col-span-2 pt-2 border-t border-navy/10">
-                <p className="eyebrow text-xs text-gold-dim">Parent or Guardian Details (Optional)</p>
+              <div className="sm:col-span-2 pt-4 border-t border-navy/10">
+                <div className="flex items-center gap-2">
+                  <span className="text-gold-dim">◆</span>
+                  <h3 className="font-sans text-sm font-bold tracking-tight text-navy sm:text-base">
+                    Parent / Guardian Details
+                  </h3>
+                </div>
+                <p className="mt-1 text-xs text-muted">
+                  Mandatory for Junior and Teen registrations. Please provide contact details of the parent or legal guardian.
+                </p>
               </div>
 
-              <Field id="guardianName" label="Parent / Guardian Name" error={errors.guardianName}>
+              {/* 1. Parent/Guardian Full Name */}
+              <Field
+                id="guardianName"
+                label="Parent / Guardian Full Name"
+                required
+                error={errors.guardianName}
+              >
                 {(p) => (
                   <input
                     {...p}
                     type="text"
-                    placeholder="Enter parent or guardian's name"
+                    autoComplete="name"
+                    placeholder="Enter parent or guardian’s full name"
                     value={values.guardianName}
                     onChange={set('guardianName')}
                   />
                 )}
               </Field>
 
-              <Field id="guardianPhone" label="Parent / Guardian Phone" error={errors.guardianPhone}>
+              {/* 2. Parent/Guardian Relationship */}
+              <Field
+                id="guardianRelationship"
+                label="Relationship to Participant"
+                required
+                error={errors.guardianRelationship}
+              >
+                {(p) => (
+                  <Select
+                    {...p}
+                    value={values.guardianRelationship}
+                    onChange={setValue('guardianRelationship')}
+                    placeholder="Choose relationship"
+                    options={guardianRelationships.map((r) => ({ value: r, label: r }))}
+                  />
+                )}
+              </Field>
+
+              {/* 3. Parent/Guardian Contact Number */}
+              <Field
+                id="guardianPhone"
+                label="Parent / Guardian Contact Number"
+                required
+                error={errors.guardianPhone}
+              >
                 {(p) => (
                   <input
                     {...p}
                     type="tel"
                     inputMode="tel"
-                    placeholder="Parent or guardian mobile"
+                    autoComplete="tel"
+                    placeholder="10-digit mobile number"
                     value={values.guardianPhone}
                     onChange={set('guardianPhone')}
+                  />
+                )}
+              </Field>
+
+              {/* 4. Parent/Guardian Email Address */}
+              <Field
+                id="guardianEmail"
+                label="Parent / Guardian Email Address"
+                required
+                error={errors.guardianEmail}
+              >
+                {(p) => (
+                  <input
+                    {...p}
+                    type="email"
+                    autoComplete="email"
+                    placeholder="parent@example.com"
+                    value={values.guardianEmail}
+                    onChange={set('guardianEmail')}
                   />
                 )}
               </Field>
@@ -432,87 +369,7 @@ export default function RegistrationForm({ category }) {
           )}
         </div>
 
-        {/* Coupon Code Disclosure & Input */}
-        <div className="mt-6 border-t border-navy/10 pt-5">
-          {!appliedCoupon ? (
-            <div>
-              <button
-                type="button"
-                onClick={() => setCouponOpen((o) => !o)}
-                className="flex items-center gap-2 text-sm font-semibold text-navy hover:text-gold-dim transition-colors cursor-pointer"
-              >
-                <TicketPercent size={16} className="text-gold-dim" />
-                <span>Have a coupon code?</span>
-                {couponOpen ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
-              </button>
-
-              {couponOpen && (
-                <div className="mt-3 max-w-md">
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={couponInput}
-                      onChange={(e) => {
-                        setCouponInput(e.target.value.toUpperCase())
-                        if (couponError) setCouponError(null)
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault()
-                          handleApplyCoupon()
-                        }
-                      }}
-                      placeholder="ENTER PROMO CODE"
-                      className="min-h-11 flex-1 rounded-xl border border-navy/20 bg-white px-3.5 font-mono text-sm tracking-wider uppercase text-navy placeholder:text-muted/60 focus:border-navy focus:outline-none"
-                    />
-                    <button
-                      type="button"
-                      onClick={handleApplyCoupon}
-                      disabled={couponLoading || !couponInput.trim()}
-                      className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl bg-navy px-5 font-sans text-sm font-semibold text-white transition-colors hover:bg-navy-mid disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
-                    >
-                      {couponLoading ? (
-                        <Loader2 size={15} className="animate-spin text-gold" />
-                      ) : (
-                        'Apply'
-                      )}
-                    </button>
-                  </div>
-                  {couponError && (
-                    <p className="mt-2 text-xs font-medium text-red-600 flex items-center gap-1">
-                      <AlertCircle size={13} className="shrink-0" />
-                      <span>{couponError}</span>
-                    </p>
-                  )}
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-900">
-              <div className="flex items-center gap-2">
-                <Check size={16} className="text-emerald-700 shrink-0" />
-                <span className="font-mono text-sm font-bold tracking-wider">{appliedCoupon.code}</span>
-                <span className="rounded-full bg-emerald-200/70 px-2 py-0.5 text-xs font-semibold text-emerald-800">
-                  {appliedCoupon.isFree
-                    ? '100% Free'
-                    : appliedCoupon.discountType === 'FLAT'
-                      ? `₹${appliedCoupon.discountValue} OFF`
-                      : `${appliedCoupon.discountValue ?? (appliedCoupon.baseAmountPaise ? Math.round(((appliedCoupon.discountPaise || 0) / appliedCoupon.baseAmountPaise) * 100) : '')}% OFF`}
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={handleRemoveCoupon}
-                className="inline-flex items-center gap-1 text-xs font-semibold text-red-700 hover:text-red-900 underline underline-offset-2 cursor-pointer"
-              >
-                <X size={13} />
-                <span>Remove</span>
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* Fee Summary */}
+        {/* Fee Guidance & Application Policy */}
         <div className="surface-sunken mt-6 rounded-2xl border border-navy/10 p-5 sm:p-6">
           <div className="flex items-center justify-between">
             <span className="font-sans text-xs text-muted">Contest Category</span>
@@ -521,46 +378,69 @@ export default function RegistrationForm({ category }) {
             </span>
           </div>
 
-          {appliedCoupon ? (
-            <div className="mt-3 space-y-2 border-t border-navy/10 pt-3">
-              <div className="flex justify-between font-sans text-sm">
-                <span className="text-muted">Standard entry fee</span>
-                <span className="font-mono text-navy">{formatFee(category.fee)}</span>
-              </div>
-              <div className="flex justify-between font-sans text-sm font-semibold text-emerald-700">
-                <span className="flex items-center gap-1">
-                  <span>Coupon discount ({appliedCoupon.code})</span>
-                  {appliedCoupon.isFree && <Sparkles size={13} />}
-                </span>
-                <span className="font-mono">
-                  -₹{((appliedCoupon.discountPaise || 0) / 100).toFixed((appliedCoupon.discountPaise || 0) % 100 === 0 ? 0 : 2)}
-                </span>
-              </div>
-              <div className="flex items-baseline justify-between border-t border-navy/10 pt-2.5">
-                <div>
-                  <span className="font-sans text-sm font-bold text-navy">Total Payable</span>
-                  {appliedCoupon.isFree && (
-                    <span className="block text-[0.6875rem] font-semibold text-emerald-700">
-                      Payment gateway bypassed (Complimentary free entry)
-                    </span>
-                  )}
-                </div>
-                <span className="meta-value text-2xl font-black text-navy sm:text-3xl">
-                  {appliedCoupon.isFree
-                    ? '₹0'
-                    : `₹${((appliedCoupon.payableAmountPaise || 0) / 100).toFixed((appliedCoupon.payableAmountPaise || 0) % 100 === 0 ? 0 : 2)}`}
-                </span>
-              </div>
-            </div>
-          ) : (
-            <div className="mt-3 flex items-baseline justify-between border-t border-navy/10 pt-3">
+          <div className="mt-3 border-t border-navy/10 pt-3">
+            <div className="flex items-baseline justify-between">
               <div>
-                <p className="eyebrow text-[0.6875rem] text-muted">Total Payable Fee</p>
-                <p className="text-[0.6875rem] text-muted mt-0.5">One-time entry fee</p>
+                <p className="eyebrow text-[0.6875rem] text-muted">Category Entry Fee</p>
               </div>
-              <p className="meta-value text-[2.25rem] leading-none text-navy">{formatFee(category.fee)}</p>
+              <p className="meta-value text-[2rem] leading-none text-navy">{formatFee(category.fee)}</p>
             </div>
-          )}
+            <p className="mt-2.5 text-xs leading-relaxed text-muted">
+              Submitting this form records your application in our committee review queue. An official payment invitation link will be sent to your email address only if you are shortlisted.
+            </p>
+          </div>
+        </div>
+
+        {/* Important Dates & Contest Rules */}
+        <div className="surface-sunken mt-6 rounded-2xl border border-navy/15 bg-amber-50/40 p-5 sm:p-6 text-navy">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-navy/10 pb-3">
+            <h3 className="font-sans text-sm font-bold tracking-tight text-navy sm:text-base flex items-center gap-2">
+              <span className="text-gold-dim">◆</span>
+              <span>Important Dates &amp; Contest Rules</span>
+            </h3>
+            <a
+              href="/Salem-Star-Speaker-Contest-Rules.pdf"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-xs font-semibold text-navy underline underline-offset-2 hover:text-gold-dim"
+            >
+              <span>Read Full Contest Rules (PDF)</span>
+              <span aria-hidden="true">&rarr;</span>
+            </a>
+          </div>
+
+          <ul className="mt-4 space-y-2.5 font-sans text-xs leading-relaxed text-navy/90 sm:text-sm">
+            <li className="flex items-start gap-2.5">
+              <span className="shrink-0 text-gold-dim font-bold mt-0.5">◆</span>
+              <span>
+                Registration closes on <strong>26 October 2026, Monday at 23:59 hours.</strong>
+              </span>
+            </li>
+            <li className="flex items-start gap-2.5">
+              <span className="shrink-0 text-gold-dim font-bold mt-0.5">◆</span>
+              <span>Prelims may be conducted online if registrations are higher.</span>
+            </li>
+            <li className="flex items-start gap-2.5">
+              <span className="shrink-0 text-gold-dim font-bold mt-0.5">◆</span>
+              <span>
+                Only finalists will have to pay <strong className="text-navy font-bold">₹250 as registration fee.</strong>
+              </span>
+            </li>
+            <li className="flex items-start gap-2.5">
+              <span className="shrink-0 text-gold-dim font-bold mt-0.5">◆</span>
+              <span>
+                Online contestants&apos; briefing and speaking order will be conducted on <strong>30th October 2026, Friday, at 20:30 hours.</strong>
+              </span>
+            </li>
+            <li className="flex items-start gap-2.5">
+              <span className="shrink-0 text-gold-dim font-bold mt-0.5">◆</span>
+              <span>Absent contestants shall be represented by those present as proxies.</span>
+            </li>
+            <li className="flex items-start gap-2.5">
+              <span className="shrink-0 text-gold-dim font-bold mt-0.5">◆</span>
+              <span>The speaking order, once fixed, shall not be changed.</span>
+            </li>
+          </ul>
         </div>
 
         {/* Submit Button */}
@@ -572,30 +452,12 @@ export default function RegistrationForm({ category }) {
           {isSubmitting ? (
             <>
               <Loader2 size={18} className="animate-spin text-gold" />
-              <span>Creating Registration...</span>
-            </>
-          ) : appliedCoupon?.isFree ? (
-            <>
-              <Sparkles size={18} className="text-gold" />
-              <span>Complete Free Registration · ₹0</span>
+              <span>Registering...</span>
             </>
           ) : (
-            <>
-              <ShieldCheck size={18} className="text-gold" />
-              <span>
-                Proceed to Booking &amp; Payment ·{' '}
-                {appliedCoupon
-                  ? `₹${((appliedCoupon.payableAmountPaise || 0) / 100).toFixed((appliedCoupon.payableAmountPaise || 0) % 100 === 0 ? 0 : 2)}`
-                  : formatFee(category.fee)}
-              </span>
-            </>
+            <span>Register Now</span>
           )}
         </button>
-
-        <p className="mt-4 text-center font-sans text-xs text-muted flex items-center justify-center gap-1.5">
-          <ShieldCheck size={14} className="text-navy/50" />
-          <span>Secured by 256-bit SSL encryption &amp; Razorpay payment gateway</span>
-        </p>
       </fieldset>
     </form>
   )

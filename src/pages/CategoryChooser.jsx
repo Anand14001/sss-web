@@ -1,7 +1,8 @@
 import { useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { ArrowRight, X } from 'lucide-react'
-import { categories, event, formatFee } from '../data/event'
+import { event } from '../data/event'
+import { useCategories } from '../context/CategoriesContext'
 
 /**
  * The category chooser at /registration, presented as a modal over the landing
@@ -34,6 +35,7 @@ import { categories, event, formatFee } from '../data/event'
  */
 export default function CategoryChooser() {
   const navigate = useNavigate()
+  const { categories, formatFee } = useCategories()
   const panelRef = useRef(null)
   const restoreFocusTo = useRef(null)
 
